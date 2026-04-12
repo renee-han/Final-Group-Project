@@ -1,2 +1,1 @@
-# Final-Group-Project
-test
+# Final-Group-Project: Renee Han and Amelia Smith

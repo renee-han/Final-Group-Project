@@ -1,7 +1,7 @@
 ## What are you building? One or two sentences describing your project.
-[]
+[We are building a web application that will provide users with activity recommendations based on the weather at their location.]
 ## Why? What motivates you to build this? What problem does it solve?
-[]
+[We think this would be helpful for planning trips and exploring new places. Rather than checking the weather and then trying to find things to do that align with it that day, our app will take your location and weather and suggest activities based on that, allowing for simplified itinerary planning.]
 ## MVP vs. Stretch Goals: What is the minimum working version? What would you add if you have time?
 [The basic skeleton of the overall project at a minimum should include a seamless blend between the weather API and the API from some of the travel activities sources we want to potentially implement i.e. TripAdvisor, Yelp, Google Places, etc. It should be able to take in a user destination, get the weather for that location, and recommend respective activities. It should be simple, clean, and intuitive to use via Flask. If we have the time, we could possibly integrate the OpenAI API so users can use that to look up things to do based on weather too.]
 ## What don't you know yet? Be honest about uncertainties - new libraries, APIs, concepts you need to learn.

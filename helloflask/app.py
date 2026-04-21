@@ -24,7 +24,7 @@ def long_lat(place_name):
     response.raise_for_status() #handles api errors 
     data = response.json()#converts data into dict/JSON form 
     if not data["features"]:
-        raise ValueError(f"Could not find location: {place_name}")
+        raise ValueError(f"Could not find location: {place_name}") #if a user types in random nonsense and if Mapbox is unable to find the location, it will return a friendly error i.e. Can't find xyz location 
     print(data) #this is a list of dicts
     lng, lat = data["features"][0]["geometry"]["coordinates"]
      #tuple = unpacking/packing: assigning the first value to lng and second to lat
@@ -62,12 +62,7 @@ def get_weather(lat,lng):
     }
     return weather
 
-#Testing weather
-if __name__ == "__main__":
-    lat, lng = long_lat("Boston Common")
-    print(get_weather(lat, lng))
-
-#OpenAI API function
+#Third function (OpenAI)
 def open_ai_recs(place, weather):
     messages = [
         {
@@ -83,12 +78,22 @@ def open_ai_recs(place, weather):
 Location: {place}
 Weather: {weather['description']}, {weather['temp']}F
 
-Return:
-- 3 indoor activities
-- 3 outdoor activities
-- 2 hidden gems
-- 3 free activities
-- 2 family-friendly activities
+Return a JSON array of 13 activities with this exact structure:
+[
+  {{
+    "name": "Activity name",
+    "category": "indoor",
+    "description": "Brief description",
+    "price": "Free or estimated price e.g. $15-20"
+  }}
+]
+
+Categories must include:
+- 3 indoor
+- 3 outdoor  
+- 2 hidden_gem
+- 3 free
+- 2 family_friendly
 """,
         },
     ]
@@ -98,30 +103,54 @@ Return:
         input=messages,
     )
 
-    result = response.output_text
+    import json
+    result = json.loads(response.output_text)
     return result
 
-#Testing Weather
+
+
+#Testing Together 
 if __name__ == "__main__":
     place = "Boston Common"
-
-    # 1. Get coordinates from Mapbox
     lat, lng = long_lat(place)
-
-    # 2. Get weather from OpenWeather
     weather = get_weather(lat, lng)
-
-    # 3. Get OpenAI recommendations
     recs = open_ai_recs(place, weather)
 
-    # 4. Print results
     print("\n=== WEATHER ===")
     print(weather)
 
-    print("\n=== AI RECOMMENDATIONS ===")
-    print(recs)
-#Flask Section
+    print("\n=== RECOMMENDATIONS ===")
+    for activity in recs:
+        print(f"[{activity['category']}] {activity['name']} - {activity['price']}")
 
+
+#Flask Section
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/recommendations", methods=["POST"])
+def recommendations():
+    place = request.form["place"]
+    try:
+        lat, lng = long_lat(place)
+        weather = get_weather(lat,lng)
+        recs = open_ai_recs(place, weather)
+        return render_template("output.html",
+            place=place,
+            weather=weather,
+            recs=recs,
+            lat=lat,
+            lng=lng,
+            mapbox_token=MAPBOX_KEY
+        )
+    except Exception as e:
+        return render_template("index.html", error=f"Something went wrong: {e}")
+
+if __name__ == "__main__":
+    app.run(debug=True)
 
 
 

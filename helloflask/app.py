@@ -1,5 +1,6 @@
 import requests
 import os
+import json 
 from dotenv import load_dotenv
 from openai import OpenAI
 load_dotenv() #goes into env file and loads the API key and the variable its assigned to into Python memory
@@ -84,8 +85,7 @@ Return a JSON array of 13 activities with this exact structure:
     "name": "Activity name",
     "category": "indoor",
     "description": "Brief description",
-    "price": "Free or estimated price e.g. $15-20",
-    "website": "https://example.com or 'Not available'"
+    "price": "Free or estimated price e.g. $15-20"
   }}
 ]
 
@@ -95,6 +95,7 @@ Categories must include:
 - 2 hidden_gem
 - 3 free
 - 2 family_friendly
+For the website: use the official website or bookings page if it exists. If there are none or if it is difficult to find, use https://www.google.com/search?q=Activity+Name+{place}
 """,
         },
     ]
@@ -105,7 +106,7 @@ Categories must include:
     )
 
     import json
-    result = json.loads(response.choices[0].message.content)
+    result = json.loads(response.output_text)
     return result
 
 
@@ -122,7 +123,10 @@ if __name__ == "__main__":
 
     print("\n=== RECOMMENDATIONS ===")
     for activity in recs:
-        print(f"[{activity['category']}] {activity['name']} - {activity['price']}")
+        print(f"{activity['category'].upper()}")
+        print(f"  {activity['name']}, {activity['price']}")
+        print(f"  {activity['website']}")
+        print()
 
 
 #Flask Section

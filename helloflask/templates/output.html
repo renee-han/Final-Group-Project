@@ -125,6 +125,22 @@
             border-radius: 2px;
         }
 
+        .category-subheading {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+            margin-top: 35px;
+            margin-bottom: 20px;
+            padding: 0 5px;
+            padding-left: 15px;
+            position: relative;
+            border-left: 4px solid #667eea;
+        }
+
+        .category-subheading:first-of-type {
+            margin-top: 0;
+        }
+
         .activities-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -163,24 +179,19 @@
             flex: 1;
         }
 
-        .activity-category {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-
         .activity-description {
             font-size: 14px;
             color: #666;
             line-height: 1.5;
             margin-bottom: 15px;
             flex: 1;
+        }
+
+        .activity-details {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: auto;
         }
 
         .activity-price {
@@ -191,6 +202,56 @@
             padding: 10px;
             border-radius: 6px;
             text-align: center;
+        }
+
+        .activity-website {
+            text-align: center;
+        }
+
+        .activity-website a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .activity-website a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .no-website {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: #f0f0f0;
+            color: #999;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            height: 400px;
+            position: relative;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
         }
 
         .category-filter {
@@ -313,31 +374,75 @@
         <!-- Activities Section -->
         <h2 class="section-title"><i class="fas fa-sparkles"></i> Recommended Activities</h2>
 
-        <div class="activities-grid">
-            {% for activity in recs %}
-                <div class="activity-card">
-                    <div class="activity-header">
-                        <div class="activity-name">{{ activity.name }}</div>
-                        <span class="activity-category">{{ activity.category }}</span>
-                    </div>
-                    <div class="activity-description">{{ activity.description }}</div>
-                    <div class="activity-price">
-                        <i class="fas fa-tag"></i> {{ activity.price }}
-                    </div>
+        {% set categories = {} %}
+        {% for activity in recs %}
+            {% if activity.category not in categories %}
+                {% set _ = categories.update({activity.category: []}) %}
+            {% endif %}
+            {% set _ = categories[activity.category].append(activity) %}
+        {% endfor %}
+
+        {% set category_order = ['indoor', 'outdoor', 'hidden_gem', 'free', 'family_friendly'] %}
+        {% set category_names = {'indoor': 'Indoor Activities', 'outdoor': 'Outdoor Activities', 'hidden_gem': 'Hidden Gems', 'free': 'Free Activities', 'family_friendly': 'Family Friendly'} %}
+
+        {% for category in category_order %}
+            {% if category in categories %}
+                <h3 class="category-subheading">{{ category_names[category] }}</h3>
+                <div class="activities-grid">
+                    {% for activity in categories[category] %}
+                        <div class="activity-card">
+                            <div class="activity-header">
+                                <div class="activity-name">{{ activity.name }}</div>
+                            </div>
+                            <div class="activity-description">{{ activity.description }}</div>
+                            <div class="activity-details">
+                                <div class="activity-price">
+                                    <i class="fas fa-tag"></i> {{ activity.price }}
+                                </div>
+                                <div class="activity-website">
+                                    {% if activity.website and activity.website.lower() != 'not available' %}
+                                        <a href="{{ activity.website }}" target="_blank" rel="noopener noreferrer">
+                                            <i class="fas fa-link"></i> Visit Website
+                                        </a>
+                                    {% else %}
+                                        <span class="no-website"><i class="fas fa-info-circle"></i> Website not available</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
-        </div>
+            {% endif %}
+        {% endfor %}
     </div>
 
     <script>
         // Initialize Mapbox map
-        mapboxgl.accessToken = '{{ mapbox_token }}';
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: [{{ lng }}, {{ lat }}],
-            zoom: 13
-        });
+        try {
+            // Check if map container exists
+            const mapContainer = document.getElementById('map');
+            if (!mapContainer) {
+                console.error('Map container not found');
+                throw new Error('Map container element not found');
+            }
+
+            // Set Mapbox token
+            mapboxgl.accessToken = '{{ mapbox_token }}';
+            
+            if (!mapboxgl.accessToken || mapboxgl.accessToken.trim() === '') {
+                console.error('Mapbox token is missing or invalid');
+                mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-weight: 600;">Map unavailable - Missing API token</div>';
+                throw new Error('Mapbox token not configured');
+            }
+
+            console.log('Initializing map with token length:', mapboxgl.accessToken.length);
+            
+            const map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/streets-v12',
+                center: [{{ lng }}, {{ lat }}],
+                zoom: 13
+            });
 
         // Color mapping for categories
         const categoryColors = {
@@ -424,8 +529,8 @@
                 <div style="max-width: 250px; font-family: 'Segoe UI', sans-serif;">
                     <div style="font-weight: 700; font-size: 14px; color: #333; margin-bottom: 5px;">${activity.name}</div>
                     <div style="font-size: 12px; color: #666; margin-bottom: 8px;">${activity.description}</div>
-                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                        <span style="background: ${color}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">${activity.category.replace(/_/g, ' ').toUpperCase()}</span>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+                        <span style="background: ${color}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">${activity.category.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
                         <span style="background: #f0f2ff; color: #667eea; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${activity.price}</span>
                     </div>
                 </div>
@@ -475,6 +580,10 @@
         legendContainer.appendChild(legend);
         
         document.getElementById('map').appendChild(legendContainer);
+        } catch (error) {
+            console.error('Map initialization error:', error);
+            document.getElementById('map').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-weight: 600; text-align: center; padding: 20px;">' + error.message + '</div>';
+        }
     </script>
 </body>
 </html>

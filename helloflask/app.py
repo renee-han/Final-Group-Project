@@ -84,7 +84,8 @@ Return a JSON array of 13 activities with this exact structure:
     "name": "Activity name",
     "category": "indoor",
     "description": "Brief description",
-    "price": "Free or estimated price e.g. $15-20"
+    "price": "Free or estimated price e.g. $15-20",
+    "website": "https://example.com or 'Not available'"
   }}
 ]
 
@@ -98,13 +99,13 @@ Categories must include:
         },
     ]
 
-    response = client.responses.create(
+    response = client.chat.completions.create(
         model="gpt-5-nano",
-        input=messages,
+        messages=messages,
     )
 
     import json
-    result = json.loads(response.output_text)
+    result = json.loads(response.choices[0].message.content)
     return result
 
 

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Recommendations - Activity Finder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .results-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .location-info {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .location-info h1 {
+            font-size: 36px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .weather-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .weather-icon {
+            font-size: 60px;
+            color: #667eea;
+        }
+
+        .weather-details {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .temperature {
+            font-size: 32px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .weather-description {
+            font-size: 14px;
+            color: #666;
+            text-transform: capitalize;
+        }
+
+        .weather-meta {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            height: 300px;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 25px;
+            padding: 0 5px;
+            position: relative;
+            padding-left: 15px;
+        }
+
+        .section-title::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .activities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .activity-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border-top: 4px solid #667eea;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .activity-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+
+        .activity-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            flex: 1;
+        }
+
+        .activity-category {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .activity-description {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            flex: 1;
+        }
+
+        .activity-price {
+            font-size: 14px;
+            font-weight: 600;
+            color: #667eea;
+            background: #f0f2ff;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            color: #666;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 12px 24px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+
+        .back-button:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        @media (max-width: 768px) {
+            .header-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .location-info h1 {
+                font-size: 28px;
+            }
+
+            .weather-info {
+                justify-content: center;
+            }
+
+            .weather-icon {
+                font-size: 48px;
+            }
+
+            .temperature {
+                font-size: 24px;
+            }
+
+            .activities-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-title {
+                font-size: 22px;
+            }
+
+            .map-container {
+                height: 250px;
+            }
+        }
+
+        .emoji-icon {
+            font-size: 28px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="results-container">
+        <a href="/" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+            Back to Search
+        </a>
+
+        <!-- Header with Location and Weather -->
+        <div class="header-card">
+            <div class="location-info">
+                <h1>{{ place }}</h1>
+            </div>
+            <div class="weather-info">
+                <div class="weather-icon">
+                    <i class="fas fa-cloud-sun"></i>
+                </div>
+                <div class="weather-details">
+                    <div class="temperature">{{ weather.temp }}°F</div>
+                    <div class="weather-description">{{ weather.description }}</div>
+                    <div class="weather-meta">
+                        Feels like {{ weather.feels_like }}°F • Humidity {{ weather.humidity }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Section -->
+        <div class="map-container" id="map"></div>
+
+        <!-- Activities Section -->
+        <h2 class="section-title"><i class="fas fa-sparkles"></i> Recommended Activities</h2>
+
+        <div class="activities-grid">
+            {% for activity in recs %}
+                <div class="activity-card">
+                    <div class="activity-header">
+                        <div class="activity-name">{{ activity.name }}</div>
+                        <span class="activity-category">{{ activity.category }}</span>
+                    </div>
+                    <div class="activity-description">{{ activity.description }}</div>
+                    <div class="activity-price">
+                        <i class="fas fa-tag"></i> {{ activity.price }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mapbox map
+        mapboxgl.accessToken = '{{ mapbox_token }}';
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [{{ lng }}, {{ lat }}],
+            zoom: 13
+        });
+
+        // Color mapping for categories
+        const categoryColors = {
+            'indoor': '#3b82f6',           // Blue
+            'outdoor': '#10b981',          // Green
+            'hidden_gem': '#f59e0b',       // Orange
+            'free': '#fbbf24',             // Yellow
+            'family_friendly': '#ec4899'   // Pink
+        };
+
+        // Activity data from template
+        const activities = {{ recs|tojson }};
+        const baseLocation = [{{ lng }}, {{ lat }}];
+
+        // Add main location marker
+        const mainMarker = document.createElement('div');
+        mainMarker.style.width = '40px';
+        mainMarker.style.height = '40px';
+        mainMarker.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23667eea%22%3E%3Cpath d=%22M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-13c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z%22/%3E%3C/svg%3E")';
+        mainMarker.style.backgroundSize = 'contain';
+        mainMarker.style.backgroundRepeat = 'no-repeat';
+        mainMarker.style.backgroundPosition = 'center';
+
+        new mapboxgl.Marker(mainMarker)
+            .setLngLat(baseLocation)
+            .setPopup(new mapboxgl.Popup().setHTML(`<strong>📍 ${('{{ place }}'.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'))}</strong>`))
+            .addTo(map);
+
+        // Helper function to get color based on category priority
+        function getMarkerColor(activity) {
+            // Priority: free > family_friendly > indoor/outdoor > hidden_gem
+            if (activity.category === 'free') return categoryColors['free'];
+            if (activity.category === 'family_friendly') return categoryColors['family_friendly'];
+            if (activity.category === 'indoor') return categoryColors['indoor'];
+            if (activity.category === 'outdoor') return categoryColors['outdoor'];
+            if (activity.category === 'hidden_gem') return categoryColors['hidden_gem'];
+            return '#6b7280'; // Default gray
+        }
+
+        // Helper function to get icon emoji
+        function getCategoryEmoji(category) {
+            const emojiMap = {
+                'indoor': '🏛️',
+                'outdoor': '🏞️',
+                'hidden_gem': '💎',
+                'free': '🎉',
+                'family_friendly': '👨‍👩‍👧‍👦'
+            };
+            return emojiMap[category] || '📍';
+        }
+
+        // Add activity markers with slight offset for visibility
+        activities.forEach((activity, index) => {
+            // Create slight offsets so markers don't overlap
+            const offset = 0.01; // ~1km at equator
+            const angle = (index / activities.length) * 2 * Math.PI;
+            const radius = (index % 3 === 0) ? offset * 0.5 : offset;
+            
+            const markerLng = baseLocation[0] + radius * Math.cos(angle);
+            const markerLat = baseLocation[1] + radius * Math.sin(angle);
+
+            const color = getMarkerColor(activity);
+            const emoji = getCategoryEmoji(activity.category);
+
+            // Create custom marker element
+            const markerElement = document.createElement('div');
+            markerElement.style.width = '35px';
+            markerElement.style.height = '35px';
+            markerElement.style.backgroundColor = color;
+            markerElement.style.borderRadius = '50%';
+            markerElement.style.display = 'flex';
+            markerElement.style.alignItems = 'center';
+            markerElement.style.justifyContent = 'center';
+            markerElement.style.color = 'white';
+            markerElement.style.fontSize = '18px';
+            markerElement.style.fontWeight = 'bold';
+            markerElement.style.border = '3px solid white';
+            markerElement.style.boxShadow = `0 4px 10px rgba(0, 0, 0, 0.2), 0 0 0 2px ${color}`;
+            markerElement.style.cursor = 'pointer';
+            markerElement.innerHTML = emoji;
+
+            // Create popup HTML
+            const popupHTML = `
+                <div style="max-width: 250px; font-family: 'Segoe UI', sans-serif;">
+                    <div style="font-weight: 700; font-size: 14px; color: #333; margin-bottom: 5px;">${activity.name}</div>
+                    <div style="font-size: 12px; color: #666; margin-bottom: 8px;">${activity.description}</div>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <span style="background: ${color}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">${activity.category.replace(/_/g, ' ').toUpperCase()}</span>
+                        <span style="background: #f0f2ff; color: #667eea; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${activity.price}</span>
+                    </div>
+                </div>
+            `;
+
+            new mapboxgl.Marker(markerElement)
+                .setLngLat([markerLng, markerLat])
+                .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML(popupHTML))
+                .addTo(map);
+        });
+
+        // Add navigation controls
+        map.addControl(new mapboxgl.NavigationControl());
+
+        // Add a legend for the map
+        const legend = document.createElement('div');
+        legend.style.backgroundColor = 'white';
+        legend.style.borderRadius = '8px';
+        legend.style.padding = '15px';
+        legend.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.1)';
+        legend.style.fontFamily = "'Segoe UI', sans-serif";
+        legend.style.fontSize = '12px';
+        legend.style.margin = '10px';
+
+        let legendHTML = '<div style="font-weight: 700; margin-bottom: 10px; color: #333;">Activity Categories</div>';
+        const categoryOrder = ['free', 'family_friendly', 'indoor', 'outdoor', 'hidden_gem'];
+        
+        categoryOrder.forEach(category => {
+            const color = categoryColors[category];
+            const emoji = getCategoryEmoji(category);
+            const label = category.replace(/_/g, ' ').charAt(0).toUpperCase() + category.replace(/_/g, ' ').slice(1);
+            legendHTML += `
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <div style="width: 20px; height: 20px; background: ${color}; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 10px;">${emoji}</div>
+                    <span style="color: #666;">${label}</span>
+                </div>
+            `;
+        });
+
+        legend.innerHTML = legendHTML;
+        
+        const legendContainer = document.createElement('div');
+        legendContainer.style.position = 'absolute';
+        legendContainer.style.top = '10px';
+        legendContainer.style.right = '10px';
+        legendContainer.style.zIndex = '10';
+        legendContainer.appendChild(legend);
+        
+        document.getElementById('map').appendChild(legendContainer);
+    </script>
+</body>
+</html>

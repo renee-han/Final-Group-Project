@@ -79,6 +79,6 @@ For the website: use the official website or bookings page if it exists. If ther
 
 
 ##What you did with it - how you verified, modified, or integrated the output
-[]
+[When AI gave back the code, we didn't just copy and paste it in VSCode and move along to the next task. We actually spent time trying to pick apart and dissect the code it gave back, as seen in our thorough annotations and comments. The whole point of this project is to learn and problem solve and if we just simply asked AI to generate code without really understanding what was going on, there would be no point of learning! Once we asked something from Claude or ChatGPT, we actually asked follow up questions after it was done generating i.e. why did you do xyz?, I'm confused with xyz part, can you explain it again, or I want to keep things simpler as I'm a beginner in Python, how can you edit the code or the way you explain something to explain that? Once all those knots were combed through, then we moved on to the next task.]
 ##What you learned - what you understood better as a result
 []

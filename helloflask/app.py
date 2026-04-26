@@ -265,6 +265,36 @@ def itinerary():
         )
     except Exception as e:
         return render_template("index.html", error=f"Something went wrong: {e}")
+    
+@app.route("/itinerary/<int:id>")
+def view_itinerary(id):
+    try:
+        conn = sqlite3.connect("itineraries.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT place, date, weather, schedule FROM itineraries WHERE id = ?", (id,))
+        row = cursor.fetchone()
+        conn.close()
+
+        if not row:
+            return render_template("index.html", error="Itinerary not found.")
+
+        place = row[0]
+        date = row[1]
+        weather_str = row[2]
+        schedule = json.loads(row[3])  # converts JSON string back to Python list
+
+        return render_template("itinerary.html",
+            place=place,
+            date=date,
+            weather={"description": weather_str, "temp": "", "feels_like": "", "humidity": "", "city": place},
+            schedule=schedule,
+            history=[],  # no need to show history when viewing a saved one
+            lat=None,
+            lng=None,
+            mapbox_token=MAPBOX_KEY
+        )
+    except Exception as e:
+        return render_template("index.html", error=f"Something went wrong: {e}")
 
 if __name__ == "__main__":
     app.run(debug=True)

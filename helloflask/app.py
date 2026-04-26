@@ -158,6 +158,56 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 
+#Itinerary Section
+def generate_itinerary(place, weather, recs):
+    activities_list = "\n".join([f"- {a['name']} ({a['category']}, {a['price']})" for a in recs])
+    
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a travel itinerary planner. Always respond with valid JSON only. No extra text, no markdown, no code blocks."
+        },
+        {
+            "role": "user",
+            "content": f"""
+Location: {place}
+Weather: {weather['description']}, {weather['temp']}F
+Available activities:
+{activities_list}
+
+Create an hour by hour itinerary from 9:00 AM to 9:00 PM using these activities. No meals or restaurants.
+Every single hour must have an entry.
+Return a JSON array with this exact structure:
+[
+  {{
+    "time": "9:00 AM",
+    "activity": "Activity name",
+    "duration": "1 hour",
+    "description": "What to do/expect this hour",
+    "tips": "Practical tip",
+    "category": "indoor"
+  }}
+]
+
+Rules:
+- Every hour from 9 AM to 9 PM must have an entry
+- No food, meals, or restaurants
+- Make activities flow logically by location
+- Account for travel time between locations
+- Pick activities that make sense given the weather
+""",
+        },
+    ]
+
+    response = client.responses.create(
+        model="gpt-5-nano",
+        input=messages,
+    )
+
+    result = json.loads(response.output_text)
+    return result
+
+
 
 
 

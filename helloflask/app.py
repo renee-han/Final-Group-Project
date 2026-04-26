@@ -70,7 +70,7 @@ def open_ai_recs(place, weather):
             "role": "system",
             "content": (
                 "You are an activity recommendation engine for the user's local geographic area. "
-                "Give suggestions for activities to do based on weather and location. Keep it concise."
+                "Give suggestions for activities to do based on weather and location. Keep it concise." "Always respond with valid JSON only. No extra text, no markdown, no code blocks."
             ),
         },
         {
@@ -86,6 +86,7 @@ Return a JSON array of 13 activities with this exact structure:
     "category": "indoor",
     "description": "Brief description",
     "price": "Free or estimated price e.g. $15-20"
+    "website": "https://official website or booking page"
   }}
 ]
 
@@ -105,9 +106,9 @@ For the website: use the official website or bookings page if it exists. If ther
         messages=messages,
     )
 
-    import json
-    result = json.loads(response.output_text)
-    return result
+    result = json.loads(response.choices[0].message.content)  # add this
+    return result  
+
 
 
 
@@ -201,10 +202,10 @@ Rules:
 
     response = client.responses.create(
         model="gpt-5-nano",
-        input=messages,
+        message=messages,
     )
 
-    result = json.loads(response.output_text)
+    result = json.loads(response.choices[0].message.content)
     return result
 
 

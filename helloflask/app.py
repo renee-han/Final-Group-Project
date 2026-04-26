@@ -1,6 +1,8 @@
 import requests
 import os
 import json 
+import sqlite3
+from datetime import datetime
 from dotenv import load_dotenv
 from openai import OpenAI
 load_dotenv() #goes into env file and loads the API key and the variable its assigned to into Python memory
@@ -10,7 +12,24 @@ MAPBOX_KEY = os.getenv("MAPBOX_TOKEN")
 OPEN_AI_KEY = os.getenv("OPENAI_API_KEY")
 OPEN_WEATHER_KEY = os.getenv("OPENWEATHER_KEY")
 
+#Itinerary SQL Lite Setup
 
+def init_db():
+    conn = sqlite3.connect("itineraries.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS itineraries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            place TEXT,
+            date TEXT,
+            weather TEXT,
+            schedule TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+init_db()
 
 #API Pipeline Dev
 
@@ -85,7 +104,7 @@ Return a JSON array of 13 activities with this exact structure:
     "name": "Activity name",
     "category": "indoor",
     "description": "Brief description",
-    "price": "Free or estimated price e.g. $15-20"
+    "price": "Free or estimated price e.g. $15-20",
     "website": "https://official website or booking page"
   }}
 ]
@@ -108,56 +127,6 @@ For the website: use the official website or bookings page if it exists. If ther
 
     result = json.loads(response.choices[0].message.content)  # add this
     return result  
-
-
-
-
-#Testing Together 
-if __name__ == "__main__":
-    place = "Boston Common"
-    lat, lng = long_lat(place)
-    weather = get_weather(lat, lng)
-    recs = open_ai_recs(place, weather)
-
-    print("\n=== WEATHER ===")
-    print(weather)
-
-    print("\n=== RECOMMENDATIONS ===")
-    for activity in recs:
-        print(f"{activity['category'].upper()}")
-        print(f"  {activity['name']}, {activity['price']}")
-        print(f"  {activity['website']}")
-        print()
-
-
-#Flask Section
-app = Flask(__name__)
-
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-@app.route("/recommendations", methods=["POST"])
-def recommendations():
-    place = request.form["place"]
-    try:
-        lat, lng = long_lat(place)
-        weather = get_weather(lat,lng)
-        recs = open_ai_recs(place, weather)
-        return render_template("output.html",
-            place=place,
-            weather=weather,
-            recs=recs,
-            lat=lat,
-            lng=lng,
-            mapbox_token=MAPBOX_KEY
-        )
-    except Exception as e:
-        return render_template("index.html", error=f"Something went wrong: {e}")
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
 
 #Itinerary Section
 def generate_itinerary(place, weather, recs):
@@ -200,13 +169,107 @@ Rules:
         },
     ]
 
-    response = client.responses.create(
+    response = client.chat.completions.create(
         model="gpt-5-nano",
-        message=messages,
+        messages=messages,
     )
 
     result = json.loads(response.choices[0].message.content)
     return result
+
+
+#Testing Together 
+if __name__ == "__main__":
+    place = "Boston Common"
+    lat, lng = long_lat(place)
+    weather = get_weather(lat, lng)
+    recs = open_ai_recs(place, weather)
+
+    print("\n=== WEATHER ===")
+    print(weather)
+
+    print("\n=== RECOMMENDATIONS ===")
+    for activity in recs:
+        print(f"{activity['category'].upper()}")
+        print(f"  {activity['name']}, {activity['price']}")
+        print(f"  {activity['website']}")
+        print()
+
+
+
+#Flask Section
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/recommendations", methods=["POST"])
+def recommendations():
+    place = request.form["place"]
+    try:
+        lat, lng = long_lat(place)
+        weather = get_weather(lat,lng)
+        recs = open_ai_recs(place, weather)
+        return render_template("output.html",
+            place=place,
+            weather=weather,
+            recs=recs,
+            lat=lat,
+            lng=lng,
+            mapbox_token=MAPBOX_KEY
+        )
+    except Exception as e:
+        return render_template("index.html", error=f"Something went wrong: {e}")
+
+
+@app.route("/itinerary", methods=["POST"])
+def itinerary():
+    place = request.form["place"]
+    try:
+        lat, lng = long_lat(place)
+        weather = get_weather(lat, lng)
+        recs = open_ai_recs(place, weather)
+        schedule = generate_itinerary(place, weather, recs)
+
+        # Save to SQLite
+        conn = sqlite3.connect("itineraries.db")
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO itineraries (place, date, weather, schedule)
+            VALUES (?, ?, ?, ?)
+        """, (
+            place,
+            datetime.now().strftime("%Y-%m-%d %H:%M"),
+            f"{weather['description']}, {weather['temp']}F",
+            json.dumps(schedule)
+        ))
+        conn.commit()
+        conn.close()
+
+        # Fetch history
+        conn = sqlite3.connect("itineraries.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, place, date, weather FROM itineraries ORDER BY id DESC")
+        history = cursor.fetchall()
+        conn.close()
+
+        return render_template("itinerary.html",
+            place=place,
+            weather=weather,
+            schedule=schedule,
+            history=history,
+            lat=lat,
+            lng=lng,
+            mapbox_token=MAPBOX_KEY
+        )
+    except Exception as e:
+        return render_template("index.html", error=f"Something went wrong: {e}")
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+
 
 
 

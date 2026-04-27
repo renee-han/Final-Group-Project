@@ -176,7 +176,7 @@
         .timeline-item {
             position: relative;
             margin-bottom: 30px;
-            padding-left: 100px;
+            padding-left: 150px;
         }
 
         .timeline-dot {
@@ -198,13 +198,13 @@
 
         .time-slot {
             position: absolute;
-            left: -95px;
+            left: 50px;
             top: 10px;
             font-size: 14px;
             font-weight: 700;
             color: #667eea;
-            width: 80px;
-            text-align: right;
+            width: 65px;
+            text-align: center;
         }
 
         .activity-item {
@@ -470,7 +470,7 @@
                             </span>
                         </div>
                         {% if item.category %}
-                            <span class="category-badge">{{ item.category }}</span>
+                            <span class="category-badge">{{ item.category.replace('_', ' ').title() }}</span>
                         {% endif %}
                         <div class="activity-description">{{ item.description }}</div>
                         {% if item.tips %}

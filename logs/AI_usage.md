@@ -1,18 +1,18 @@
 ##What you asked - the prompt or question
-[To give a bit of context, all the code starting at the very top when I do the initial set up i.e. importing libaries/initalizing API keys and the MapBox and OpenWeather API function base code are all code I got from class and my mini project. It gave me a really strong basis to begin and embelish with AI. As for the Open AI API function, I tried to use the demo class code but the context was different. Here are the things I asked:
+[To give a bit of context, all the code starting at the very top when we do the initial set up i.e. importing libaries/initalizing API keys and the MapBox and OpenWeather API function base code are all code we got from class and Renee's mini project. It gave us a really strong basis to begin and embellish with AI. As for the Open AI API function, we tried to use the demo class code but the context was different. Here are the things we asked:
 
 1. How do I go about including code that will handle errors related to the API itself i.e. running out of API calls/etc?
 2. How do I add code that handles a user incorrectly typing something in or some random gibberish or if MapBox is unable to find the location at all?  
 3. I pasted the demo code into AI and asked, "How can I alter this to match my project context?"  
-4. Once the weather and activities are given, I also want the user to be able to directly use the activities' website or booking page to make a reservation or learn more. How can I do that?]
+4. Once the weather and activities are given, I also want the user to be able to directly use the activities' website or booking page to make a reservation or learn more. How can I do that?
 5. For the itinerary section, I used the similar code structure from the open_ai function, however, I asked AI, in def generate_itinerary(place, weather, recs): activities_list = "\n".join([f"- {a['name']} ({a['category']}, {a['price']})" for a in recs]), what does the code after activities_list do?
 6. How can I create a SQLite table/database adjacent structure in a page after the output that displays unique itinerary links for users?
 7. How can you build a user friendly interface for this app to make it look nice and easy to use?
 8. Can you seperate with subheadings like indoor and outdoor rather than having them appear as tags? Then, I want to change tags like Hidden_Gem to appear as two words, like "Hidden Gem".
-9. Can you create the webpage for the itinerary part of the web app and make it look coherent with the rest of the app?
+9. Can you create the webpage for the itinerary part of the web app and make it look coherent with the rest of the app?]
 
 ##What AI generated - the output you received
-[Here's the output I received from the accompanying questions: 
+[Here's the output we received from the accompanying questions: 
 
 1. Use response.raise_for_status() as it checks the HTTP response status code and raises an error if the request failed
 

@@ -2,6 +2,7 @@ import requests
 import os
 import json 
 import sqlite3
+import re
 from datetime import datetime
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -73,10 +74,18 @@ def get_weather(lat,lng):
     response.raise_for_status()
     data = response.json()
     
+    # Convert Fahrenheit to Celsius
+    temp_f = data["main"]["temp"]
+    feels_like_f = data["main"]["feels_like"]
+    temp_c = round((temp_f - 32) * 5/9, 1)
+    feels_like_c = round((feels_like_f - 32) * 5/9, 1)
+    
     weather = {
         "description": data["weather"][0]["description"],
-        "temp": data["main"]["temp"],
-        "feels_like": data["main"]["feels_like"],
+        "temp_f": round(temp_f, 1),
+        "temp_c": temp_c,
+        "feels_like_f": round(feels_like_f, 1),
+        "feels_like_c": feels_like_c,
         "humidity": data["main"]["humidity"],
         "city": data["name"]
     }
@@ -96,7 +105,7 @@ def open_ai_recs(place, weather):
             "role": "user",
             "content": f"""
 Location: {place}
-Weather: {weather['description']}, {weather['temp']}F
+Weather: {weather['description']}, {weather['temp_f']}°F / {weather['temp_c']}°C
 
 Return a JSON array of 13 activities with this exact structure:
 [
@@ -141,7 +150,7 @@ def generate_itinerary(place, weather, recs):
             "role": "user",
             "content": f"""
 Location: {place}
-Weather: {weather['description']}, {weather['temp']}F
+Weather: {weather['description']}, {weather['temp_f']}°F / {weather['temp_c']}°C
 Available activities:
 {activities_list}
 
@@ -241,7 +250,7 @@ def itinerary():
         """, (
             place,
             datetime.now().strftime("%Y-%m-%d %H:%M"),
-            f"{weather['description']}, {weather['temp']}F",
+            f"{weather['description']}, {weather['temp_f']}°F / {weather['temp_c']}°C",
             json.dumps(schedule)
         ))
         conn.commit()
@@ -283,10 +292,26 @@ def view_itinerary(id):
         weather_str = row[2]
         schedule = json.loads(row[3])  # converts JSON string back to Python list
 
+        # Parse weather string to extract temperatures
+        # Format: "Description, XXX.X°F / XXX.X°C"
+        weather_parts = weather_str.split(", ", 1)
+        description = weather_parts[0] if weather_parts else "Weather data unavailable"
+        temp_info = weather_parts[1] if len(weather_parts) > 1 else ""
+        
+        # Extract F and C temperatures from the string
+        temps = re.findall(r'([\d.]+)°([FC])', temp_info)
+        temp_f = ""
+        temp_c = ""
+        for temp_value, unit in temps:
+            if unit == 'F':
+                temp_f = temp_value
+            elif unit == 'C':
+                temp_c = temp_value
+
         return render_template("itinerary.html",
             place=place,
             date=date,
-            weather={"description": weather_str, "temp": "", "feels_like": "", "humidity": "", "city": place},
+            weather={"description": description, "temp_f": temp_f, "temp_c": temp_c, "feels_like_f": "", "feels_like_c": "", "humidity": "", "city": place},
             schedule=schedule,
             history=[],  # no need to show history when viewing a saved one
             lat=None,

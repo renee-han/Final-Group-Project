@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Itinerary - Activity Finder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .itinerary-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 12px 24px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+
+        .back-button:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .header-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .location-info {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .location-info h1 {
+            font-size: 36px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .date-info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .weather-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .weather-icon {
+            font-size: 60px;
+            color: #667eea;
+        }
+
+        .weather-details {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .temperature {
+            font-size: 32px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .weather-description {
+            font-size: 14px;
+            color: #666;
+            text-transform: capitalize;
+        }
+
+        .weather-meta {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            height: 300px;
+            position: relative;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 25px;
+            padding: 0 5px;
+            position: relative;
+            padding-left: 15px;
+            margin-top: 40px;
+        }
+
+        .section-title::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .section-title:first-of-type {
+            margin-top: 0;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 30px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            padding-left: 150px;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: 12px;
+            top: 15px;
+            width: 36px;
+            height: 36px;
+            background: white;
+            border: 4px solid #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            z-index: 2;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .time-slot {
+            position: absolute;
+            left: 50px;
+            top: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #667eea;
+            width: 65px;
+            text-align: center;
+        }
+
+        .activity-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .activity-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .activity-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .activity-duration {
+            display: inline-block;
+            background: #f0f2ff;
+            color: #667eea;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .activity-description {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .activity-tips {
+            background: #fff9e6;
+            border-left: 4px solid #fbbf24;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #7a6a1a;
+            display: flex;
+            gap: 10px;
+        }
+
+        .activity-tips i {
+            flex-shrink: 0;
+            color: #f59e0b;
+        }
+
+        .category-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+            text-transform: capitalize;
+        }
+
+        .history-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-top: 40px;
+        }
+
+        .history-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .history-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .history-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            border-color: white;
+            color: white;
+        }
+
+        .history-place {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .history-date {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .history-weather {
+            font-size: 12px;
+            opacity: 0.85;
+        }
+
+        .history-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: auto;
+        }
+
+        .no-history {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .no-history i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .header-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .location-info h1 {
+                font-size: 28px;
+            }
+
+            .weather-info {
+                justify-content: center;
+            }
+
+            .weather-icon {
+                font-size: 48px;
+            }
+
+            .temperature {
+                font-size: 24px;
+            }
+
+            .timeline::before {
+                left: 20px;
+            }
+
+            .timeline-dot {
+                left: 3px;
+                width: 34px;
+                height: 34px;
+                font-size: 16px;
+                border-width: 3px;
+            }
+
+            .timeline-item {
+                padding-left: 80px;
+            }
+
+            .time-slot {
+                left: -10px;
+                width: 60px;
+                font-size: 12px;
+            }
+
+            .section-title {
+                font-size: 22px;
+            }
+
+            .map-container {
+                height: 250px;
+            }
+
+            .history-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="itinerary-container">
+        <a href="/" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+            Back to Search
+        </a>
+
+        <!-- Header with Location and Weather -->
+        <div class="header-card">
+            <div class="location-info">
+                <h1>{{ place }}</h1>
+                {% if date %}
+                    <div class="date-info">
+                        <i class="fas fa-calendar"></i> {{ date }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="weather-info">
+                <div class="weather-icon">
+                    <i class="fas fa-cloud-sun"></i>
+                </div>
+                <div class="weather-details">
+                    <div class="temperature">{{ weather.temp_f }}°F / {{ weather.temp_c }}°C</div>
+                    <div class="weather-description">{{ weather.description }}</div>
+                    {% if weather.humidity %}
+                        <div class="weather-meta">
+                            Feels like {{ weather.feels_like_f }}°F / {{ weather.feels_like_c }}°C • Humidity {{ weather.humidity }}%
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Section -->
+        {% if lat and lng %}
+            <div class="map-container" id="map"></div>
+        {% endif %}
+
+        <!-- Timeline Itinerary -->
+        <h2 class="section-title">
+            <i class="fas fa-clock"></i> Your Daily Itinerary
+        </h2>
+
+        <div class="timeline">
+            {% for item in schedule %}
+                <div class="timeline-item">
+                    <div class="time-slot">{{ item.time }}</div>
+                    <div class="timeline-dot">
+                        <i class="fas fa-map-pin"></i>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-title">{{ item.activity }}</div>
+                        <div style="margin-bottom: 12px;">
+                            <span class="activity-duration">
+                                <i class="fas fa-hourglass-end"></i> {{ item.duration }}
+                            </span>
+                        </div>
+                        {% if item.category %}
+                            <span class="category-badge">{{ item.category.replace('_', ' ').title() }}</span>
+                        {% endif %}
+                        <div class="activity-description">{{ item.description }}</div>
+                        {% if item.tips %}
+                            <div class="activity-tips">
+                                <i class="fas fa-lightbulb"></i>
+                                <span><strong>Tip:</strong> {{ item.tips }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- History Section -->
+        {% if history and history|length > 0 %}
+            <div class="history-section">
+                <div class="history-title">
+                    <i class="fas fa-history"></i> Previous Itineraries
+                </div>
+                <div class="history-list">
+                    {% for itinerary in history %}
+                        <a href="/itinerary/{{ itinerary[0] }}" class="history-item">
+                            <div class="history-place">
+                                <i class="fas fa-map-marker-alt"></i> {{ itinerary[1] }}
+                            </div>
+                            <div class="history-date">
+                                <i class="fas fa-calendar-alt"></i> {{ itinerary[2] }}
+                            </div>
+                            <div class="history-weather">
+                                <i class="fas fa-cloud"></i> {{ itinerary[3] }}
+                            </div>
+                            <div class="history-cta">
+                                View Itinerary <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        {% if lat and lng and mapbox_token %}
+        try {
+            // Check if map container exists
+            const mapContainer = document.getElementById('map');
+            if (!mapContainer) {
+                console.error('Map container not found');
+                throw new Error('Map container element not found');
+            }
+
+            // Set Mapbox token
+            mapboxgl.accessToken = '{{ mapbox_token }}';
+            
+            if (!mapboxgl.accessToken || mapboxgl.accessToken.trim() === '') {
+                console.error('Mapbox token is missing or invalid');
+                mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-weight: 600;">Map unavailable - Missing API token</div>';
+                throw new Error('Mapbox token not configured');
+            }
+
+            // Initialize map
+            const map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/streets-v12',
+                center: [{{ lng }}, {{ lat }}],
+                zoom: 13
+            });
+
+            // Add main location marker
+            const mainMarker = document.createElement('div');
+            mainMarker.style.width = '40px';
+            mainMarker.style.height = '40px';
+            mainMarker.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23667eea%22%3E%3Cpath d=%22M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-13c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z%22/%3E%3C/svg%3E")';
+            mainMarker.style.backgroundSize = 'contain';
+            mainMarker.style.backgroundRepeat = 'no-repeat';
+            mainMarker.style.backgroundPosition = 'center';
+
+            new mapboxgl.Marker(mainMarker)
+                .setLngLat([{{ lng }}, {{ lat }}])
+                .setPopup(new mapboxgl.Popup().setHTML(`<strong>📍 {{ place }}</strong>`))
+                .addTo(map);
+
+            // Add navigation controls
+            map.addControl(new mapboxgl.NavigationControl());
+
+        } catch (error) {
+            console.error('Map initialization error:', error);
+            const mapContainer = document.getElementById('map');
+            if (mapContainer) {
+                mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-weight: 600; text-align: center; padding: 20px;">' + error.message + '</div>';
+            }
+        }
+        {% endif %}
+    </script>
+</body>
+</html>

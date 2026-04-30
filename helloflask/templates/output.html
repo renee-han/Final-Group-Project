@@ -359,10 +359,10 @@
                     <i class="fas fa-cloud-sun"></i>
                 </div>
                 <div class="weather-details">
-                    <div class="temperature">{{ weather.temp }}°F</div>
+                    <div class="temperature">{{ weather.temp_f }}°F / {{ weather.temp_c }}°C</div>
                     <div class="weather-description">{{ weather.description }}</div>
                     <div class="weather-meta">
-                        Feels like {{ weather.feels_like }}°F • Humidity {{ weather.humidity }}%
+                        Feels like {{ weather.feels_like_f }}°F / {{ weather.feels_like_c }}°C • Humidity {{ weather.humidity }}%
                     </div>
                 </div>
             </div>
@@ -370,6 +370,32 @@
 
         <!-- Map Section -->
         <div class="map-container" id="map"></div>
+
+        <!-- Itinerary CTA -->
+        <div style="display: flex; gap: 15px; margin-bottom: 30px; justify-content: center; flex-wrap: wrap;">
+            <form method="POST" action="/itinerary" style="display: inline;">
+                <input type="hidden" name="place" value="{{ place }}">
+                <button type="submit" style="
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    border: none;
+                    padding: 14px 28px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                    text-decoration: none;
+                ">
+                    <i class="fas fa-calendar-day"></i>
+                    Generate Full Day Itinerary
+                </button>
+            </form>
+        </div>
 
         <!-- Activities Section -->
         <h2 class="section-title"><i class="fas fa-sparkles"></i> Recommended Activities</h2>
